@@ -1,0 +1,15 @@
+OASISFormat: 0.4
+Name: sockopt
+Version: 0.1
+Synopsis: sockopt provides a more complete interface to POSIX's (set|get)sockopt
+Authors: Vincent Bernardoff <vb@luminar.eu.org>
+License: ISC
+Plugins: META (0.3), DevFiles (0.3)
+BuildTools: ocamlbuild
+
+Library sockopt
+  Path: lib
+  Modules: Sockopt
+  BuildDepends: ctypes.foreign, ipaddr
+  CSources: sockopt_stubs.c
+  CompiledObject: best
