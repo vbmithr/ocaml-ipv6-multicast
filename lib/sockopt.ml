@@ -2,8 +2,8 @@ open Ctypes
 open Foreign
 
 let if_nametoindex = foreign ~check_errno:true "if_nametoindex" (string @-> returning uint)
-let setsockopt = foreign ~check_errno:true "setsockopt" (int @-> int @-> int @-> ptr void @-> uint @-> returning int)
-let getsockopt = foreign ~check_errno:true "getsockopt" (int @-> int @-> int @-> ptr void @-> ptr uint @-> returning int)
+let setsockopt = foreign ~check_errno:true "setsockopt" (int @-> int @-> int @-> ptr void @-> int @-> returning int)
+let getsockopt = foreign ~check_errno:true "getsockopt" (int @-> int @-> int @-> ptr void @-> ptr int @-> returning int)
 
 module String = struct
   include String
@@ -74,12 +74,20 @@ module IPV6 = struct
     let direction = match direction with
       | `Join -> IPV6_JOIN_GROUP
       | `Leave -> IPV6_LEAVE_GROUP in
-    let ret =
-      setsockopt
+    let ret = setsockopt
         (int_of_file_descr fd)
         (int_of_level IPPROTO_IPV6)
         (int_of_ipv6_option direction)
         (addr s |> to_voidp)
-        (sizeof ipv6_mreq |> Unsigned.UInt.of_int)
+        (sizeof ipv6_mreq)
+    in ignore (ret:int)
+
+  let mcast_outgoing_iface fd iface =
+    let ret = setsockopt
+      (int_of_file_descr fd)
+      (int_of_level IPPROTO_IPV6)
+      (int_of_ipv6_option IPV6_MULTICAST_IF)
+      (if_nametoindex iface |> allocate uint |> to_voidp)
+      (sizeof int)
     in ignore (ret:int)
 end
