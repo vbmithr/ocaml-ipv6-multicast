@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: f33875d45354f7c9a6e115d1e2163956) *)
+(* DO NOT EDIT (digest: d05fcd4f8c0d0a367b27bdc04f838220) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -557,13 +557,27 @@ let package_default =
   {
      MyOCamlbuildBase.lib_ocaml = [("sockopt", ["lib"], [])];
      lib_c = [("sockopt", "lib", [])];
-     flags = [];
+     flags =
+       [
+          (["oasis_library_sockopt_byte"; "ocaml"; "link"; "byte"],
+            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+          (["oasis_library_sockopt_native"; "ocaml"; "link"; "native"],
+            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+          (["oasis_library_sockopt_byte"; "ocaml"; "ocamldep"; "byte"],
+            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+          (["oasis_library_sockopt_native"; "ocaml"; "ocamldep"; "native"],
+            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+          (["oasis_library_sockopt_byte"; "ocaml"; "compile"; "byte"],
+            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+          (["oasis_library_sockopt_native"; "ocaml"; "compile"; "native"],
+            [(OASISExpr.EBool true, S [A "-bin-annot"])])
+       ];
      includes = []
   }
   ;;
 
 let dispatch_default = MyOCamlbuildBase.dispatch_default package_default;;
 
-# 568 "myocamlbuild.ml"
+# 582 "myocamlbuild.ml"
 (* OASIS_STOP *)
 Ocamlbuild_plugin.dispatch dispatch_default;;

@@ -13,3 +13,5 @@ Library sockopt
   BuildDepends: ctypes.foreign, ipaddr
   CSources: sockopt_stubs.c
   CompiledObject: best
+  ByteOpt: -bin-annot
+  NativeOpt: -bin-annot
