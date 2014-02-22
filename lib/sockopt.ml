@@ -25,7 +25,7 @@ type sa_family =
   | AF_UNIX
   | AF_UNSPEC
 
-let if_nametoindex = foreign ~check_errno:true "if_nametoindex" (string @-> returning uint)
+let if_nametoindex = foreign ~check_errno:true "if_nametoindex" (string @-> returning int)
 external swap16 : int -> int = "%bswap16";;
 let int_of_file_descr (fd:Unix.file_descr) : int = Obj.magic fd
 external int_of_level : level -> int = "c_int_of_level"
@@ -86,10 +86,8 @@ module Sockaddr_in6 = struct
     setf s sin6_flowinfo (flowinfo |> Int32.of_int |> Unsigned.UInt32.of_int32);
     setf s sin6_addr (In6_addr.make v6addr);
     (match iface with
-    | None -> setf s sin6_scope_id (Unsigned.UInt32.of_int32 0l)
-    | Some name -> setf s sin6_scope_id (if_nametoindex name
-                                         |> Unsigned.UInt.to_int
-                                         |> Unsigned.UInt32.of_int));
+    | None -> setf s sin6_scope_id (Unsigned.UInt32.zero)
+    | Some name -> setf s sin6_scope_id (if_nametoindex name |> Unsigned.UInt32.of_int));
     s
 end
 
@@ -97,12 +95,12 @@ module Ipv6_mreq = struct
   type t
   let t : t structure typ = structure "ipv6_mreq"
   let ipv6mr_multiaddr = field t "ipv6mr_multiaddr" In6_addr.t
-  let ipv6mr_interface = field t "ipv6mr_interface" uint
+  let ipv6mr_interface = field t "ipv6mr_interface" int
   let () = seal t
   let make ?iface v6addr =
     let s = make t in
     (match iface with
-     | None -> setf s ipv6mr_interface (Unsigned.UInt.of_int 0)
+     | None -> setf s ipv6mr_interface 0
      | Some name -> setf s ipv6mr_interface (if_nametoindex name));
     setf s ipv6mr_multiaddr (In6_addr.make v6addr);
     s
@@ -139,7 +137,34 @@ module IPV6 = struct
       (int_of_file_descr fd)
       (int_of_level IPPROTO_IPV6)
       (int_of_ipv6_option IPV6_MULTICAST_IF)
-      (if_nametoindex iface |> allocate uint |> to_voidp)
+      (if_nametoindex iface |> allocate int |> to_voidp)
+      (sizeof int)
+    in ignore (ret:int)
+
+  let mcast_loop fd b =
+    let ret = setsockopt
+      (int_of_file_descr fd)
+      (int_of_level IPPROTO_IPV6)
+      (int_of_ipv6_option IPV6_MULTICAST_LOOP)
+      (allocate uint Unsigned.UInt.(if b then one else zero) |> to_voidp)
+      (sizeof uint)
+    in ignore (ret:int)
+
+  let mcast_hops fd n =
+    let ret = setsockopt
+      (int_of_file_descr fd)
+      (int_of_level IPPROTO_IPV6)
+      (int_of_ipv6_option IPV6_MULTICAST_HOPS)
+      (allocate int n |> to_voidp)
+      (sizeof int)
+    in ignore (ret:int)
+
+  let ucast_hops fd n =
+    let ret = setsockopt
+      (int_of_file_descr fd)
+      (int_of_level IPPROTO_IPV6)
+      (int_of_ipv6_option IPV6_UNICAST_HOPS)
+      (allocate int n |> to_voidp)
       (sizeof int)
     in ignore (ret:int)
 end
