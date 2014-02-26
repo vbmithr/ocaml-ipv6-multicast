@@ -109,6 +109,7 @@ end
 let setsockopt = foreign ~check_errno:true "setsockopt" (int @-> int @-> int @-> ptr void @-> int @-> returning int)
 let getsockopt = foreign ~check_errno:true "getsockopt" (int @-> int @-> int @-> ptr void @-> ptr int @-> returning int)
 let bind = foreign ~check_errno:true "bind" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
+let connect = foreign ~check_errno:true "connect" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
 
 let bind6 ?iface ?(flowinfo=0) sock v6addr port =
   let saddr_in6 = Sockaddr_in6.make ?iface ~flowinfo v6addr port in
@@ -116,6 +117,14 @@ let bind6 ?iface ?(flowinfo=0) sock v6addr port =
       (int_of_file_descr sock)
       (addr saddr_in6)
       (sizeof Sockaddr_in6.t)
+  in ignore (ret:int)
+
+let connect6 ?iface ?(flowinfo=0) sock v6addr port =
+  let saddr_in6 = Sockaddr_in6.make ?iface ~flowinfo v6addr port in
+  let ret = connect
+    (int_of_file_descr sock)
+    (addr saddr_in6)
+    (sizeof Sockaddr_in6.t)
   in ignore (ret:int)
 
 module IPV6 = struct
