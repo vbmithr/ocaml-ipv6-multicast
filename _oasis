@@ -15,3 +15,9 @@ Library sockopt
   CompiledObject: best
   ByteOpt: -bin-annot
   NativeOpt: -bin-annot
+
+Executable test_if_nametoindex
+  Path: test
+  MainIs: test_if_nametoindex.ml
+  BuildDepends: sockopt
+  CompiledObject: best
