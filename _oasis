@@ -21,3 +21,4 @@ Executable test_if_nametoindex
   MainIs: test_if_nametoindex.ml
   BuildDepends: sockopt
   CompiledObject: best
+  Install: false
