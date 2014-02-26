@@ -1,3 +1,6 @@
+val if_nametoindex : string -> int
+  (** [if_nametoindex iface] is the index of iface [iface]. *)
+
 val bind6 : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Ipaddr.V6.t -> int -> unit
 (** [bind6 ~iface ~flow fd v6addr port] binds [fd] to the socket
     address [v6addr:port]. The optional argument [iface] is required
