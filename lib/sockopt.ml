@@ -58,7 +58,7 @@ module In6_addr = struct
                        |> String.explode
                        |> List.map (fun c -> Char.code c |> Unsigned.UInt8.of_int) in
     let s = make t in
-    setf s s6_addr (Ctypes.Array.of_list uint8_t v6addr_bytes);
+    setf s s6_addr (Ctypes.CArray.of_list uint8_t v6addr_bytes);
     s
 end
 
