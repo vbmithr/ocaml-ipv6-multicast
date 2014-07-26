@@ -1,9 +1,9 @@
 # OASIS_START
-# DO NOT EDIT (digest: 5b091a9496bf0c6765cd4fe9d5e218c1)
+# DO NOT EDIT (digest: 82d5960239fedd22b7192ee41903e44f)
 version = "0.1"
 description =
 "sockopt provides a more complete interface to POSIX's (set|get)sockopt"
-requires = "ctypes.foreign ipaddr"
+requires = "ctypes.foreign ipaddr.unix"
 archive(byte) = "sockopt.cma"
 archive(byte, plugin) = "sockopt.cma"
 archive(native) = "sockopt.cmxa"

@@ -1,5 +1,5 @@
 # OASIS_START
-# DO NOT EDIT (digest: 4a862ba7f403bfa8815a05106062df78)
+# DO NOT EDIT (digest: d4c864f452761706da550c681bbc54f9)
 # Ignore VCS directories, you can use the same kind of rule outside
 # OASIS_START/STOP if you want to exclude directories that contains
 # useless stuff for the build process
@@ -23,14 +23,14 @@
 "lib/sockopt_stubs.c": oasis_library_sockopt_native
 <lib/sockopt.{cma,cmxa}>: use_libsockopt_stubs
 <lib/*.ml{,i}>: pkg_ctypes.foreign
-<lib/*.ml{,i}>: pkg_ipaddr
+<lib/*.ml{,i}>: pkg_ipaddr.unix
 "lib/sockopt_stubs.c": pkg_ctypes.foreign
-"lib/sockopt_stubs.c": pkg_ipaddr
+"lib/sockopt_stubs.c": pkg_ipaddr.unix
 # Executable test_if_nametoindex
 <test/test_if_nametoindex.{native,byte}>: pkg_ctypes.foreign
-<test/test_if_nametoindex.{native,byte}>: pkg_ipaddr
+<test/test_if_nametoindex.{native,byte}>: pkg_ipaddr.unix
 <test/test_if_nametoindex.{native,byte}>: use_sockopt
 <test/*.ml{,i}>: pkg_ctypes.foreign
-<test/*.ml{,i}>: pkg_ipaddr
+<test/*.ml{,i}>: pkg_ipaddr.unix
 <test/*.ml{,i}>: use_sockopt
 # OASIS_STOP

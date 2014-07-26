@@ -11,7 +11,7 @@ AlphaFeatures: compiled_setup_ml
 Library sockopt
   Path: lib
   Modules: Sockopt
-  BuildDepends: ctypes.foreign, ipaddr
+  BuildDepends: ctypes.foreign, ipaddr.unix
   CSources: sockopt_stubs.c
   CompiledObject: best
   ByteOpt: -bin-annot
