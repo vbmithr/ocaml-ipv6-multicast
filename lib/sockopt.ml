@@ -108,24 +108,39 @@ end
 
 let setsockopt = foreign ~check_errno:true "setsockopt" (int @-> int @-> int @-> ptr void @-> int @-> returning int)
 let getsockopt = foreign ~check_errno:true "getsockopt" (int @-> int @-> int @-> ptr void @-> ptr int @-> returning int)
-let bind = foreign ~check_errno:true "bind" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
-let connect = foreign ~check_errno:true "connect" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
+let _bind = foreign ~check_errno:true "bind" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
+let _connect = foreign ~check_errno:true "connect" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
+
 
 let bind6 ?iface ?(flowinfo=0) sock v6addr port =
   let saddr_in6 = Sockaddr_in6.make ?iface ~flowinfo v6addr port in
-  let ret = bind
+  let ret = _bind
       (int_of_file_descr sock)
       (addr saddr_in6)
       (sizeof Sockaddr_in6.t)
   in ignore (ret:int)
 
+let bind ?iface ?(flowinfo=0) fd sa = match sa with
+  | Unix.ADDR_UNIX a -> Unix.bind fd sa
+  | Unix.ADDR_INET (h, p) ->
+    match Ipaddr_unix.V6.of_inet_addr h with
+    | None -> raise (Invalid_argument "bind: not an IPv6 address")
+    | Some v6addr -> bind6 ?iface ~flowinfo fd v6addr p
+
 let connect6 ?iface ?(flowinfo=0) sock v6addr port =
   let saddr_in6 = Sockaddr_in6.make ?iface ~flowinfo v6addr port in
-  let ret = connect
+  let ret = _connect
     (int_of_file_descr sock)
     (addr saddr_in6)
     (sizeof Sockaddr_in6.t)
   in ignore (ret:int)
+
+let connect ?iface ?(flowinfo=0) fd sa = match sa with
+  | Unix.ADDR_UNIX a -> Unix.connect fd sa
+  | Unix.ADDR_INET (h, p) ->
+    match Ipaddr_unix.V6.of_inet_addr h with
+    | None -> raise (Invalid_argument "connect: not an IPv6 address")
+    | Some v6addr -> connect6 ?iface ~flowinfo fd v6addr p
 
 module IPV6 = struct
   let membership ?iface fd v6addr direction =
