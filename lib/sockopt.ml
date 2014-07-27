@@ -66,7 +66,7 @@ module In_addr = struct
   let make v4addr =
     let s = make t in
     let v4addr = Ipaddr.V4.to_bytes v4addr in
-    let v4addr = EndianString.BigEndian.get_int32 v4addr 0 in
+    let v4addr = EndianString.LittleEndian.get_int32 v4addr 0 in
     setf s s_addr v4addr;
     s
 end
