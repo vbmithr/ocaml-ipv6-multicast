@@ -179,7 +179,7 @@ let bind ?iface ?(flowinfo=0) fd sa = match sa with
   | Unix.ADDR_UNIX a -> Unix.bind fd sa
   | Unix.ADDR_INET (h, p) ->
     match Ipaddr_unix.V6.of_inet_addr h with
-    | None -> raise (Invalid_argument "bind: not an IPv6 address")
+    | None -> Unix.bind fd sa
     | Some v6addr -> bind6 ?iface ~flowinfo fd v6addr p
 
 let connect6 ?iface ?(flowinfo=0) sock v6addr port =
@@ -194,7 +194,7 @@ let connect ?iface ?(flowinfo=0) fd sa = match sa with
   | Unix.ADDR_UNIX a -> Unix.connect fd sa
   | Unix.ADDR_INET (h, p) ->
     match Ipaddr_unix.V6.of_inet_addr h with
-    | None -> raise (Invalid_argument "connect: not an IPv6 address")
+    | None -> Unix.connect fd sa
     | Some v6addr -> connect6 ?iface ~flowinfo fd v6addr p
 
 let membership ?iface fd ipaddr direction =
