@@ -1,14 +1,14 @@
 open Ctypes
 open Foreign
 
-type level =
-  | SOL_SOCKET
-  | IPPROTO_IP
-  | IPPROTO_IPV6
-  | IPPROTO_ICMP
-  | IPPROTO_RAW
-  | IPPROTO_TCP
-  | IPPROTO_UDP
+type ipver = V4 | V6
+
+type ip_option =
+  | IP_MULTICAST_IF
+  | IP_MULTICAST_TTL
+  | IP_MULTICAST_LOOP
+  | IP_ADD_MEMBERSHIP
+  | IP_DROP_MEMBERSHIP
 
 type ipv6_option =
   | IPV6_JOIN_GROUP
@@ -18,6 +18,15 @@ type ipv6_option =
   | IPV6_MULTICAST_LOOP
   | IPV6_UNICAST_HOPS
   | IPV6_V6ONLY
+
+type level =
+  | SOL_SOCKET
+  | IPPROTO_IP
+  | IPPROTO_IPV6
+  | IPPROTO_ICMP
+  | IPPROTO_RAW
+  | IPPROTO_TCP
+  | IPPROTO_UDP
 
 type sa_family =
   | AF_INET
@@ -29,6 +38,7 @@ let if_nametoindex = foreign ~check_errno:true "if_nametoindex" (string @-> retu
 external swap16 : int -> int = "%bswap16";;
 let int_of_file_descr (fd:Unix.file_descr) : int = Obj.magic fd
 external int_of_level : level -> int = "c_int_of_level"
+external int_of_ip_option : ip_option -> int = "c_int_of_ip_option"
 external int_of_ipv6_option : ipv6_option -> int = "c_int_of_ipv6_option"
 external int_of_sa_family : sa_family -> int = "c_int_of_sa_family"
 
@@ -46,6 +56,19 @@ module String = struct
       | [] -> result
       | c :: l -> result.[i] <- c; imp (i + 1) l in
     imp 0 l
+end
+
+module In_addr = struct
+  type t
+  let t : t structure typ = structure "in_addr"
+  let s_addr = field t "s_addr" int32_t
+  let () = seal t
+  let make v4addr =
+    let s = make t in
+    let v4addr = Ipaddr.V4.to_bytes v4addr in
+    let v4addr = EndianString.BigEndian.get_int32 v4addr 0 in
+    setf s s_addr v4addr;
+    s
 end
 
 module In6_addr = struct
@@ -88,6 +111,38 @@ module Sockaddr_in6 = struct
     (match iface with
     | None -> setf s sin6_scope_id (Unsigned.UInt32.zero)
     | Some name -> setf s sin6_scope_id (if_nametoindex name |> Unsigned.UInt32.of_int));
+    s
+end
+
+let get_ipv4_by_ifname ifname =
+  let open Tuntap in
+  let ifaddrs = getifaddrs () in
+  List.fold_left (fun a {name; ipaddr} ->
+      match name, ipaddr with
+      | n, AF_INET (ip, _) when n = ifname -> Some ip
+      | _ -> a
+    ) None ifaddrs
+
+module Ip_mreq = struct
+  type t
+  let t : t structure typ = structure "ip_mreq"
+  let imr_multiaddr = field t "imr_multiaddr" In_addr.t
+  let imr_interface = field t "imr_interface" In_addr.t
+  let () = seal t
+  let make ?iface v4addr =
+    let s = make t in
+    (match iface with
+    | None -> setf s imr_interface (In_addr.make Ipaddr.V4.any)
+    | Some ifname ->
+      (match get_ipv4_by_ifname ifname with
+       | None ->
+         raise (Invalid_argument
+                  (Printf.sprintf
+                     "Interface %s has no IPv4 assigned" ifname ))
+       | Some ipv4 -> setf s imr_interface (In_addr.make ipv4)
+      )
+    );
+    setf s imr_multiaddr (In_addr.make v4addr);
     s
 end
 
@@ -142,8 +197,10 @@ let connect ?iface ?(flowinfo=0) fd sa = match sa with
     | None -> raise (Invalid_argument "connect: not an IPv6 address")
     | Some v6addr -> connect6 ?iface ~flowinfo fd v6addr p
 
-module IPV6 = struct
-  let membership ?iface fd v6addr direction =
+let membership ?iface fd ipaddr direction =
+  let open Ipaddr in
+  match ipaddr with
+  | V6 v6addr ->
     let s = Ipv6_mreq.make ?iface v6addr in
     let direction = match direction with
       | `Join -> IPV6_JOIN_GROUP
@@ -155,40 +212,51 @@ module IPV6 = struct
         (addr s |> to_voidp)
         (sizeof Ipv6_mreq.t)
     in ignore (ret:int)
-
-  let mcast_outgoing_iface fd iface =
+  | V4 v4addr ->
+    let s = Ip_mreq.make ?iface v4addr in
+    let direction = match direction with
+      | `Join -> IP_ADD_MEMBERSHIP
+      | `Leave -> IP_DROP_MEMBERSHIP in
     let ret = setsockopt
+        (int_of_file_descr fd)
+        (int_of_level IPPROTO_IP)
+        (int_of_ip_option direction)
+        (addr s |> to_voidp)
+        (sizeof Ip_mreq.t)
+    in ignore (ret:int)
+
+let mcast_outgoing_iface fd ipver iface =
+  let ret = setsockopt
       (int_of_file_descr fd)
-      (int_of_level IPPROTO_IPV6)
-      (int_of_ipv6_option IPV6_MULTICAST_IF)
+      (int_of_level (if ipver = V6 then IPPROTO_IPV6 else IPPROTO_IP))
+      (if ipver = V6 then int_of_ipv6_option IPV6_MULTICAST_IF else int_of_ip_option IP_MULTICAST_IF)
       (if_nametoindex iface |> allocate int |> to_voidp)
       (sizeof int)
-    in ignore (ret:int)
+  in ignore (ret:int)
 
-  let mcast_loop fd b =
-    let ret = setsockopt
+let mcast_loop fd ipver b =
+  let ret = setsockopt
       (int_of_file_descr fd)
-      (int_of_level IPPROTO_IPV6)
-      (int_of_ipv6_option IPV6_MULTICAST_LOOP)
+      (int_of_level (if ipver = V6 then IPPROTO_IPV6 else IPPROTO_IP))
+      (if ipver = V6 then int_of_ipv6_option IPV6_MULTICAST_LOOP else int_of_ip_option IP_MULTICAST_LOOP)
       (allocate uint Unsigned.UInt.(if b then one else zero) |> to_voidp)
       (sizeof uint)
-    in ignore (ret:int)
+  in ignore (ret:int)
 
-  let mcast_hops fd n =
-    let ret = setsockopt
+let mcast_hops fd ipver n =
+  let ret = setsockopt
       (int_of_file_descr fd)
-      (int_of_level IPPROTO_IPV6)
-      (int_of_ipv6_option IPV6_MULTICAST_HOPS)
+      (int_of_level (if ipver = V6 then IPPROTO_IPV6 else IPPROTO_IP))
+      (if ipver = V6 then int_of_ipv6_option IPV6_MULTICAST_HOPS else int_of_ip_option IP_MULTICAST_TTL)
       (allocate int n |> to_voidp)
       (sizeof int)
-    in ignore (ret:int)
+  in ignore (ret:int)
 
-  let ucast_hops fd n =
-    let ret = setsockopt
+let ucast_hops fd n =
+  let ret = setsockopt
       (int_of_file_descr fd)
       (int_of_level IPPROTO_IPV6)
       (int_of_ipv6_option IPV6_UNICAST_HOPS)
       (allocate int n |> to_voidp)
       (sizeof int)
-    in ignore (ret:int)
-end
+  in ignore (ret:int)

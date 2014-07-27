@@ -1,5 +1,7 @@
 open Unix
 
+type ipver = V4 | V6
+
 val if_nametoindex : string -> int
   (** [if_nametoindex iface] is the index of iface [iface]. *)
 
@@ -18,10 +20,12 @@ val connect6 : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Ipaddr.V6.t 
     when binding a link-local address, which is impossible to do with
     {!Unix.connect}. *)
 
-module IPV6 : sig
-  val membership : ?iface:string -> Unix.file_descr -> Ipaddr.V6.t -> [< `Join | `Leave ] -> unit
-  val mcast_outgoing_iface : Unix.file_descr -> string -> unit
-  val mcast_loop : Unix.file_descr -> bool -> unit
-  val mcast_hops : Unix.file_descr -> int -> unit
-  val ucast_hops : Unix.file_descr -> int -> unit
-end
+(* Both IPv4 and IPv6 *)
+val membership : ?iface:string -> Unix.file_descr -> Ipaddr.t -> [< `Join | `Leave ] -> unit
+val mcast_outgoing_iface : Unix.file_descr -> ipver -> string -> unit
+val mcast_loop : Unix.file_descr -> ipver -> bool -> unit
+val mcast_hops : Unix.file_descr -> ipver -> int -> unit
+
+(* IPv6 only *)
+val ucast_hops : Unix.file_descr -> int -> unit
+
