@@ -199,7 +199,7 @@ let connect ?iface ?(flowinfo=0) fd sa = match sa with
 
 let membership ?iface fd ipaddr direction =
   let open Ipaddr in
-  match ipaddr with
+  match Ipaddr_unix.of_inet_addr ipaddr with
   | V6 v6addr ->
     let s = Ipv6_mreq.make ?iface v6addr in
     let direction = match direction with
