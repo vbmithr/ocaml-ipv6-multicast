@@ -1,0 +1,16 @@
+opam-version: "1.2"
+name: "sockopt"
+version: "0.1"
+maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
+authors: "Vincent Bernardoff <vb@luminar.eu.org>"
+homepage: "http://github.com/vbmithr/ocaml-sockopt"
+bug-reports: "http://github.com/vbmithr/ocaml-sockopt/issues"
+dev-repo: "git://github.com/vbmithr/ocaml-sockopt"
+license: "ISC"
+build: [
+  ["./configure" "--prefix %{prefix}%"]
+  [make]
+]
+install: [make "install"]
+remove: ["ocamlfind" "remove" "sockopt"]
+depends: ["ocamlfind" {build} "ctypes" "ipaddr" "ocplib-endian" "tuntap"]
