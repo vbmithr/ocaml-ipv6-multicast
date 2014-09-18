@@ -1,5 +1,5 @@
 (* OASIS_START *)
-(* DO NOT EDIT (digest: 33993269e1b93d0132369ae4b35bf52f) *)
+(* DO NOT EDIT (digest: cc467675a1357ab8d9bf5fd2cb9c95fc) *)
 module OASISGettext = struct
 (* # 22 "src/oasis/OASISGettext.ml" *)
 
@@ -600,17 +600,179 @@ let package_default =
      flags =
        [
           (["oasis_library_sockopt_byte"; "ocaml"; "link"; "byte"],
-            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
           (["oasis_library_sockopt_native"; "ocaml"; "link"; "native"],
-            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
           (["oasis_library_sockopt_byte"; "ocaml"; "ocamldep"; "byte"],
-            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
           (["oasis_library_sockopt_native"; "ocaml"; "ocamldep"; "native"],
-            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
           (["oasis_library_sockopt_byte"; "ocaml"; "compile"; "byte"],
-            [(OASISExpr.EBool true, S [A "-bin-annot"])]);
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
           (["oasis_library_sockopt_native"; "ocaml"; "compile"; "native"],
-            [(OASISExpr.EBool true, S [A "-bin-annot"])])
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
+          ([
+              "oasis_executable_test_if_nametoindex_byte";
+              "ocaml";
+              "link";
+              "byte"
+           ],
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
+          ([
+              "oasis_executable_test_if_nametoindex_native";
+              "ocaml";
+              "link";
+              "native"
+           ],
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
+          ([
+              "oasis_executable_test_if_nametoindex_byte";
+              "ocaml";
+              "ocamldep";
+              "byte"
+           ],
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
+          ([
+              "oasis_executable_test_if_nametoindex_native";
+              "ocaml";
+              "ocamldep";
+              "native"
+           ],
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
+          ([
+              "oasis_executable_test_if_nametoindex_byte";
+              "ocaml";
+              "compile";
+              "byte"
+           ],
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ]);
+          ([
+              "oasis_executable_test_if_nametoindex_native";
+              "ocaml";
+              "compile";
+              "native"
+           ],
+            [
+               (OASISExpr.EBool true,
+                 S
+                   [
+                      A "-bin-annot";
+                      A "-w";
+                      A "+a-4-6-9-27..29-30-32..99";
+                      A "-warn-error";
+                      A "+a-4-6-9-18-27-28-29..99"
+                   ])
+            ])
        ];
      includes = [("test", ["lib"])]
   }
@@ -618,6 +780,6 @@ let package_default =
 
 let dispatch_default = MyOCamlbuildBase.dispatch_default package_default;;
 
-# 622 "myocamlbuild.ml"
+# 784 "myocamlbuild.ml"
 (* OASIS_STOP *)
 Ocamlbuild_plugin.dispatch dispatch_default;;

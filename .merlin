@@ -1,0 +1,9 @@
+PRJ sockopt
+S lib
+S test
+B _build/lib
+B _build/test
+PKG ctypes.foreign
+PKG ipaddr.unix
+PKG ocplib-endian
+PKG tuntap

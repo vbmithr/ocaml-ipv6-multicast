@@ -14,8 +14,8 @@ Library sockopt
   BuildDepends: ctypes.foreign, ipaddr.unix, ocplib-endian, tuntap
   CSources: sockopt_stubs.c
   CompiledObject: best
-  ByteOpt: -bin-annot
-  NativeOpt: -bin-annot
+  ByteOpt: -bin-annot -w +a-4-6-9-27..29-30-32..99 -warn-error +a-4-6-9-18-27-28-29..99
+  NativeOpt: -bin-annot -w +a-4-6-9-27..29-30-32..99 -warn-error +a-4-6-9-18-27-28-29..99
 
 Executable test_if_nametoindex
   Path: test
@@ -23,3 +23,5 @@ Executable test_if_nametoindex
   BuildDepends: sockopt
   CompiledObject: best
   Install: false
+  ByteOpt: -bin-annot -w +a-4-6-9-27..29-30-32..99 -warn-error +a-4-6-9-18-27-28-29..99
+  NativeOpt: -bin-annot -w +a-4-6-9-27..29-30-32..99 -warn-error +a-4-6-9-18-27-28-29..99
