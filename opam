@@ -8,9 +8,10 @@ bug-reports: "http://github.com/vbmithr/ocaml-sockopt/issues"
 dev-repo: "git://github.com/vbmithr/ocaml-sockopt"
 license: "ISC"
 build: [
+  ["oasis" "setup"]
   ["./configure" "--prefix %{prefix}%"]
   [make]
 ]
 install: [make "install"]
 remove: ["ocamlfind" "remove" "sockopt"]
-depends: ["ocamlfind" {build} "ctypes" "ipaddr" "ocplib-endian" "tuntap"]
+depends: ["ocamlfind" {build} "oasis" "ctypes" "ipaddr" "ocplib-endian" "tuntap"]
