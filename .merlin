@@ -7,3 +7,4 @@ PKG ctypes.foreign
 PKG ipaddr.unix
 PKG ocplib-endian
 PKG tuntap
+PKG containers.string

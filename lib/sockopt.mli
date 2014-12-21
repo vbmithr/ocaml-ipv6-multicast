@@ -1,37 +1,29 @@
-open Unix
-
-type ipver = V4 | V6
-
 val if_nametoindex : string -> int
 (** [if_nametoindex iface] is the index of iface [iface]. *)
 
-val bind6 : ?iface:string -> ?flowinfo:int -> file_descr ->
-  Ipaddr.V6.t -> int -> unit
-(** [bind6 ~iface ~flow fd v6addr port] binds [fd] to the socket
-    address [v6addr:port]. The optional argument [iface] is required
-    when binding a link-local multicast address, which is impossible
-    to do with {!Unix.bind}. *)
+module IP : sig
+  module V4 : sig
+    val bind : Unix.file_descr -> Ipaddr.V4.t -> int -> unit
+    val connect : Unix.file_descr -> Ipaddr.V4.t -> int -> unit
+    val membership : ?iface:string -> Unix.file_descr -> Ipaddr.V4.t -> [< `Join | `Leave ] -> unit
+    val mcast_outgoing_iface : Unix.file_descr -> string -> unit
+    val mcast_loop : Unix.file_descr -> bool -> unit
+    val mcast_hops : Unix.file_descr -> int -> unit
+  end
 
-val connect6 : ?iface:string -> ?flowinfo:int -> file_descr ->
-  Ipaddr.V6.t -> int -> unit
-(** [connect6 ~iface ~flow fd v6addr port] connects [fd] to the socket
-    address [v6addr:port]. The optional argument [iface] is required
-    when binding a link-local address, which is impossible to do with
-    {!Unix.connect}. *)
+  module V6 : sig
+    val bind : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Ipaddr.V6.t -> int -> unit
+    val connect : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Ipaddr.V6.t -> int -> unit
+    val membership : ?iface:string -> Unix.file_descr -> Ipaddr.V6.t -> [< `Join | `Leave ] -> unit
+    val mcast_outgoing_iface : Unix.file_descr -> string -> unit
+    val mcast_loop : Unix.file_descr -> bool -> unit
+    val mcast_hops : Unix.file_descr -> int -> unit
+    val ucast_hops : Unix.file_descr -> int -> unit
+  end
+end
 
-val bind : ?iface:string -> ?flowinfo:int -> file_descr -> sockaddr -> unit
-(** Either uses [Unix.bind] or [bind6] according to [sockaddr]. *)
-
-val connect : ?iface:string -> ?flowinfo:int -> file_descr -> sockaddr -> unit
-(** Either uses [Unix.connect] or [connect6] according to [sockaddr]. *)
-
-(* Both IPv4 and IPv6 *)
-val membership           : ?iface:string -> file_descr -> inet_addr ->
-  [< `Join | `Leave ] -> unit
-val mcast_outgoing_iface : file_descr -> ipver -> string -> unit
-val mcast_loop           : file_descr -> ipver -> bool -> unit
-val mcast_hops           : file_descr -> ipver -> int -> unit
-
-(* IPv6 only *)
-val ucast_hops           : file_descr -> int -> unit
-
+module U : sig
+  val bind : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Unix.sockaddr -> unit
+  val connect : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Unix.sockaddr -> unit
+  val membership : ?iface:string -> Unix.file_descr -> Unix.inet_addr -> [< `Join | `Leave ] -> unit
+end
