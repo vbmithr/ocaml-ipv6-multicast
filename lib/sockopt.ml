@@ -96,15 +96,6 @@ module Sockaddr_in6 = struct
     s
 end
 
-let get_ipv4_by_ifname ifname =
-  let open Tuntap in
-  let ifaddrs = getifaddrs () in
-  List.fold_left (fun a {name; ipaddr} ->
-      match name, ipaddr with
-      | n, AF_INET (ip, _) when n = ifname -> Some ip
-      | _ -> a
-    ) None ifaddrs
-
 module Ip_mreq = struct
   type t
   let t : t structure typ = structure "ip_mreq"
@@ -116,12 +107,12 @@ module Ip_mreq = struct
     (match iface with
     | None -> setf s imr_interface (In_addr.make Ipaddr.V4.any)
     | Some ifname ->
-      (match get_ipv4_by_ifname ifname with
-       | None ->
+      (match Tuntap.v4_of_ifname ifname with
+       | [] ->
          raise (Invalid_argument
                   (Printf.sprintf
                      "Interface %s has no IPv4 assigned" ifname ))
-       | Some ipv4 -> setf s imr_interface (In_addr.make ipv4)
+       | ipv4::_ -> setf s imr_interface (In_addr.make @@ fst ipv4)
       )
     );
     setf s imr_multiaddr (In_addr.make v4addr);
