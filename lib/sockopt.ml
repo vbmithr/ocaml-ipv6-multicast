@@ -56,15 +56,15 @@ end
 module In6_addr = struct
   type t
   let t : t structure typ = structure "in6_addr"
-  let s6_addr = field t "s6_addr" (array 16 uint8_t)
+  let s6_addr = field t "s6_addr" @@ array 16 char
   let () = seal t
   let make v6addr =
-    let v6addr_bytes = Ipaddr.V6.to_bytes v6addr
-                       |> CCString.to_list
-                       |> List.map (fun c -> Char.code c |> Unsigned.UInt8.of_int) in
     let s = make t in
-    setf s s6_addr (Ctypes.CArray.of_list uint8_t v6addr_bytes);
-    s
+    let carr = getf s s6_addr in
+    let v6addr_bytes = Ipaddr.V6.to_bytes v6addr in
+    for i = 0 to 15 do
+      CArray.unsafe_set carr i @@ Bytes.unsafe_get v6addr_bytes i
+    done; s
 end
 
 module Sockaddr = struct
