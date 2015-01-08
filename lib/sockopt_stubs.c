@@ -57,3 +57,23 @@ int c_int_of_sa_family(int sa_family)
 	default: return Val_int(-1);
 	}
 }
+
+int c_int_of_sendrecvflags(int flags)
+{
+  switch(Int_val(flags))
+    {
+    case 0: return Val_int(MSG_CONFIRM);
+    case 1: return Val_int(MSG_DONTROUTE);
+    case 2: return Val_int(MSG_DONTWAIT);
+    case 3: return Val_int(MSG_EOR);
+    case 4: return Val_int(MSG_MORE);
+    case 5: return Val_int(MSG_NOSIGNAL);
+    case 6: return Val_int(MSG_OOB);
+    case 7: return Val_int(MSG_CMSG_CLOEXEC);
+    case 8: return Val_int(MSG_ERRQUEUE);
+    case 9: return Val_int(MSG_PEEK);
+    case 10: return Val_int(MSG_TRUNC);
+    case 11: return Val_int(MSG_WAITALL);
+    default: return (Val_int(-1));
+    }
+}

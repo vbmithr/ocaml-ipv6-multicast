@@ -32,6 +32,21 @@ type sa_family =
   | AF_UNIX
   | AF_UNSPEC
 
+type sendrecvflags =
+  | MSG_CONFIRM
+  | MSG_DONTROUTE
+  | MSG_DONTWAIT
+  | MSG_EOR
+  | MSG_MORE
+  | MSG_NOSIGNAL
+  | MSG_OOB
+  | MSG_CMSG_CLOEXEC
+  | MSG_ERRQUEUE
+  | MSG_PEEK
+  | MSG_TRUNC
+  | MSG_WAITALL
+
+
 let if_nametoindex = foreign ~check_errno:true "if_nametoindex" (string @-> returning int)
 external swap16 : int -> int = "%bswap16";;
 let int_of_file_descr (fd:Unix.file_descr) : int = Obj.magic fd
@@ -39,6 +54,9 @@ external int_of_level : level -> int = "c_int_of_level"
 external int_of_ip_option : ip_option -> int = "c_int_of_ip_option"
 external int_of_ipv6_option : ipv6_option -> int = "c_int_of_ipv6_option"
 external int_of_sa_family : sa_family -> int = "c_int_of_sa_family"
+external int_of_sendrecvflags : sendrecvflags -> int = "c_int_of_sendrecvflags"
+
+let int_of_flags flags = List.fold_left (fun acc f -> acc lor int_of_sendrecvflags f) 0 flags
 
 module In_addr = struct
   type t
@@ -75,6 +93,22 @@ module Sockaddr = struct
   let () = seal t
 end
 
+module Sockaddr_in = struct
+  type t
+  let t : t structure typ = structure "sockaddr_in"
+  let sin_family = field t "sin_family" uint16_t
+  let sin_port = field t "sin_port" uint16_t
+  let sin_addr = field t "sin_addr" In_addr.t
+  let sin_zero = field t "sin_zero" (array 8 char)
+  let () = seal t
+  let make addr port =
+    let s = make t in
+    setf s sin_family (int_of_sa_family AF_INET |> Unsigned.UInt16.of_int);
+    setf s sin_port (port |> swap16 |> Unsigned.UInt16.of_int);
+    setf s sin_addr (In_addr.make addr);
+    s
+end
+
 module Sockaddr_in6 = struct
   type t
   let t : t structure typ = structure "sockaddr_in6"
@@ -102,20 +136,12 @@ module Ip_mreq = struct
   let imr_multiaddr = field t "imr_multiaddr" In_addr.t
   let imr_interface = field t "imr_interface" In_addr.t
   let () = seal t
-  let make ?iface v4addr =
+  let make ?iface_addr v4addr =
     let s = make t in
-    (match iface with
-    | None -> setf s imr_interface (In_addr.make Ipaddr.V4.any)
-    | Some ifname ->
-      (match Tuntap.v4_of_ifname ifname with
-       | [] ->
-         raise (Invalid_argument
-                  (Printf.sprintf
-                     "Interface %s has no IPv4 assigned" ifname ))
-       | ipv4::_ -> setf s imr_interface (In_addr.make @@ fst ipv4)
-      )
-    );
     setf s imr_multiaddr (In_addr.make v4addr);
+    (match iface_addr with
+    | None -> setf s imr_interface (In_addr.make Ipaddr.V4.any)
+    | Some addr -> setf s imr_interface (In_addr.make addr));
     s
 end
 
@@ -134,6 +160,19 @@ module Ipv6_mreq = struct
     s
 end
 
+let _send = foreign ~check_errno:true "send" (int @-> string @-> size_t @-> int @-> returning int)
+let _recv = foreign ~check_errno:true "recv" (int @-> string @-> size_t @-> int @-> returning int)
+
+let sendto4 = foreign ~check_errno:true "sendto" (int @-> string @-> size_t @-> int
+                                                 @-> ptr Sockaddr_in.t @-> size_t @-> returning int)
+let sendto6 = foreign ~check_errno:true "sendto" (int @-> string @-> size_t @-> int
+                                                 @-> ptr Sockaddr_in.t @-> size_t @-> returning int)
+
+let recvfrom4 = foreign ~check_errno:true "recvfrom" (int @-> string @-> size_t @-> int
+                                                      @-> ptr Sockaddr_in6.t @-> size_t @-> returning int)
+let recvfrom6 = foreign ~check_errno:true "recvfrom" (int @-> string @-> size_t @-> int
+                                                      @-> ptr Sockaddr_in6.t @-> size_t @-> returning int)
+
 let setsockopt = foreign ~check_errno:true "setsockopt" (int @-> int @-> int @-> ptr void @-> int @-> returning int)
 let getsockopt = foreign ~check_errno:true "getsockopt" (int @-> int @-> int @-> ptr void @-> ptr int @-> returning int)
 let _bind = foreign ~check_errno:true "bind" (int @-> ptr Sockaddr_in6.t @-> int @-> returning int)
@@ -148,6 +187,27 @@ let setsockopt_uint fd level option ui =
       (allocate uint Unsigned.UInt.(of_int ui) |> to_voidp) (sizeof uint) in ()
 
 module IP = struct
+  let send fd buf pos len flags =
+    _send
+      (int_of_file_descr fd)
+      (Bytes.sub buf pos len)
+      (Unsigned.Size_t.of_int len)
+      (int_of_flags flags)
+
+  let send_substring fd buf pos len flags =
+    _send
+      (int_of_file_descr fd)
+      (Bytes.sub buf pos len)
+      (Unsigned.Size_t.of_int len)
+      (int_of_flags flags)
+
+  let recv fd buf pos len flags =
+    if (pos < 0 || len < 0 || pos + len > Bytes.length buf)
+    then invalid_arg "bounds";
+    _recv
+      (int_of_file_descr fd)
+      buf (Unsigned.Size_t.of_int pos) (int_of_flags flags)
+
   module V4 = struct
     let bind sock v4addr port =
       Unix.(bind sock @@ ADDR_INET (Ipaddr_unix.V4.to_inet_addr v4addr, port))
@@ -155,8 +215,8 @@ module IP = struct
     let connect sock v4addr port =
       Unix.(connect sock @@ ADDR_INET (Ipaddr_unix.V4.to_inet_addr v4addr, port))
 
-    let membership ?iface fd v4addr direction =
-      let s = Ip_mreq.make ?iface v4addr in
+    let membership ?iface_addr fd v4addr direction =
+      let s = Ip_mreq.make ?iface_addr v4addr in
       let direction = match direction with
         | `Join -> IP_ADD_MEMBERSHIP
         | `Leave -> IP_DROP_MEMBERSHIP in
@@ -246,9 +306,8 @@ module U = struct
       | None -> Unix.connect fd sa
       | Some v6addr -> IP.V6.connect ?iface ~flowinfo fd v6addr p
 
-  let membership ?iface fd ipaddr direction =
-    let open Ipaddr in
+  let membership6 ?iface fd ipaddr direction =
     match Ipaddr_unix.of_inet_addr ipaddr with
-    | V4 v4addr -> IP.V4.membership ?iface fd v4addr direction
-    | V6 v6addr -> IP.V6.membership ?iface fd v6addr direction
+    | Ipaddr.V6 v6addr -> IP.V6.membership ?iface fd v6addr direction
+    | _ -> invalid_arg "membership6"
 end

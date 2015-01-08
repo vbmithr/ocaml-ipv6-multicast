@@ -11,7 +11,7 @@ AlphaFeatures: compiled_setup_ml
 Library sockopt
   Path: lib
   Modules: Sockopt
-  BuildDepends: ctypes.foreign, ipaddr.unix, ocplib-endian, tuntap
+  BuildDepends: ctypes.foreign, ipaddr.unix, ocplib-endian
   CSources: sockopt_stubs.c
   CompiledObject: best
   ByteOpt: -w +a-4-6-9-27..29-30-32..99 -warn-error +a-4-6-9-18-27-28-29..99

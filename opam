@@ -24,5 +24,4 @@ depends: [
   "ctypes"
   "ipaddr"
   "ocplib-endian"
-  "tuntap"
 ]
