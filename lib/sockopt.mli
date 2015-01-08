@@ -16,10 +16,6 @@ type sendrecvflags =
   | MSG_WAITALL
 
 module IP : sig
-  val send : Unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int
-  val send_substring : Unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int
-  val recv : Unix.file_descr -> bytes -> int -> int -> sendrecvflags list -> int
-
   module V4 : sig
     val bind : Unix.file_descr -> Ipaddr.V4.t -> int -> unit
     val connect : Unix.file_descr -> Ipaddr.V4.t -> int -> unit
@@ -44,4 +40,16 @@ module U : sig
   val bind : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Unix.sockaddr -> unit
   val connect : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Unix.sockaddr -> unit
   val membership6 : ?iface:string -> Unix.file_descr -> Unix.inet_addr -> [< `Join | `Leave ] -> unit
+
+  val send : Unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int
+  val send_substring : Unix.file_descr -> string -> int -> int -> sendrecvflags list -> int
+  val recv : Unix.file_descr -> bytes -> int -> int -> sendrecvflags list -> int
+end
+
+module L : sig
+  val bind : ?iface:string -> ?flowinfo:int -> Lwt_unix.file_descr -> Unix.sockaddr -> unit
+  val connect : ?iface:string -> ?flowinfo:int -> Lwt_unix.file_descr -> Unix.sockaddr -> unit Lwt.t
+  val send : Lwt_unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int Lwt.t
+  val send_substring : Lwt_unix.file_descr -> string -> int -> int -> sendrecvflags list -> int Lwt.t
+  val recv : Lwt_unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int Lwt.t
 end

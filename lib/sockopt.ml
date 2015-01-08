@@ -187,27 +187,6 @@ let setsockopt_uint fd level option ui =
       (allocate uint Unsigned.UInt.(of_int ui) |> to_voidp) (sizeof uint) in ()
 
 module IP = struct
-  let send fd buf pos len flags =
-    _send
-      (int_of_file_descr fd)
-      (Bytes.sub buf pos len)
-      (Unsigned.Size_t.of_int len)
-      (int_of_flags flags)
-
-  let send_substring fd buf pos len flags =
-    _send
-      (int_of_file_descr fd)
-      (Bytes.sub buf pos len)
-      (Unsigned.Size_t.of_int len)
-      (int_of_flags flags)
-
-  let recv fd buf pos len flags =
-    if (pos < 0 || len < 0 || pos + len > Bytes.length buf)
-    then invalid_arg "bounds";
-    _recv
-      (int_of_file_descr fd)
-      buf (Unsigned.Size_t.of_int pos) (int_of_flags flags)
-
   module V4 = struct
     let bind sock v4addr port =
       Unix.(bind sock @@ ADDR_INET (Ipaddr_unix.V4.to_inet_addr v4addr, port))
@@ -306,8 +285,107 @@ module U = struct
       | None -> Unix.connect fd sa
       | Some v6addr -> IP.V6.connect ?iface ~flowinfo fd v6addr p
 
+  let send fd buf pos len flags =
+    _send
+      (int_of_file_descr fd)
+      (Bytes.sub buf pos len)
+      (Unsigned.Size_t.of_int len)
+      (int_of_flags flags)
+
+  let send_substring fd buf pos len flags =
+    _send
+      (int_of_file_descr fd)
+      (Bytes.sub buf pos len)
+      (Unsigned.Size_t.of_int len)
+      (int_of_flags flags)
+
+  let recv fd buf pos len flags =
+    if (pos < 0 || len < 0 || pos + len > Bytes.length buf)
+    then invalid_arg "bounds";
+    _recv
+      (int_of_file_descr fd)
+      buf (Unsigned.Size_t.of_int pos) (int_of_flags flags)
+
   let membership6 ?iface fd ipaddr direction =
     match Ipaddr_unix.of_inet_addr ipaddr with
     | Ipaddr.V6 v6addr -> IP.V6.membership ?iface fd v6addr direction
     | _ -> invalid_arg "membership6"
+end
+
+module L = struct
+  let bind ?iface ?(flowinfo=0) ch sa =
+    Lwt_unix.check_descriptor ch;
+    U.bind ?iface ~flowinfo (Lwt_unix.unix_file_descr ch) sa
+
+  let connect ?iface ?(flowinfo=0) ch sa =
+    let open Lwt_unix in
+    let fd = unix_file_descr ch in
+    if Sys.win32 then
+      (* [in_progress] tell wether connection has started but not
+         terminated: *)
+      let in_progress = ref false in
+      wrap_syscall Write ch begin fun () ->
+        if !in_progress then
+          (* Nothing works without this test and i have no idea why... *)
+          if writable ch then
+            try
+              U.connect ?iface ~flowinfo fd sa
+            with
+            | Unix.Unix_error (Unix.EISCONN, _, _) ->
+              (* This is the windows way of telling that the connection
+                 has completed. *)
+              ()
+          else
+            raise Retry
+        else
+          try
+            U.connect ?iface ~flowinfo fd sa
+          with
+          | Unix.Unix_error (Unix.EWOULDBLOCK, _, _) ->
+            in_progress := true;
+            raise Retry
+      end
+    else
+      (* [in_progress] tell wether connection has started but not
+         terminated: *)
+      let in_progress = ref false in
+      wrap_syscall Write ch begin fun () ->
+        if !in_progress then
+          (* If the connection is in progress, [getsockopt_error] tells
+             wether it succceed: *)
+          match Unix.getsockopt_error fd with
+          | None ->
+            (* The socket is connected *)
+            ()
+          | Some err ->
+            (* An error happened: *)
+            raise (Unix.Unix_error(err, "connect", ""))
+        else
+          try
+            (* We should pass only one time here, unless the system call
+               is interrupted by a signal: *)
+            U.connect ?iface ~flowinfo fd sa
+          with
+          | Unix.Unix_error (Unix.EINPROGRESS, _, _) ->
+            in_progress := true;
+            raise Retry
+      end
+
+  let send ch buf pos len flags =
+    if pos < 0 || len < 0 || pos > Bytes.length buf - len then
+      invalid_arg "Sockopt.L.send";
+    let fd = Lwt_unix.unix_file_descr ch in
+    Lwt_unix.(wrap_syscall Write ch (fun () -> U.send fd buf pos len flags))
+
+  let send_substring ch buf pos len flags =
+    if pos < 0 || len < 0 || pos > String.length buf - len then
+      invalid_arg "Sockopt.L.send_substring";
+    let fd = Lwt_unix.unix_file_descr ch in
+    Lwt_unix.(wrap_syscall Write ch (fun () -> U.send_substring fd buf pos len flags))
+
+  let recv ch buf pos len flags =
+    if pos < 0 || len < 0 || pos > Bytes.length buf - len then
+      invalid_arg "Sockopt.L.recv";
+    let fd = Lwt_unix.unix_file_descr ch in
+    Lwt_unix.(wrap_syscall Read ch (fun () -> U.send_substring fd buf pos len flags))
 end
