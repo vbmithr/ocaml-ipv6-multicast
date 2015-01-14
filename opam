@@ -21,8 +21,6 @@ remove: ["ocamlfind" "remove" "sockopt"]
 depends: [
   "ocamlfind" {build}
   "oasis"
-  "ctypes"
   "ipaddr"
-  "ocplib-endian"
   "lwt"
 ]
