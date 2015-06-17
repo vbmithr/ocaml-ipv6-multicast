@@ -55,13 +55,13 @@ let int_of_flags flags = List.fold_left (fun acc f -> acc lor int_of_sendrecvfla
 
 external if_nametoindex : string -> int = "if_nametoindex_stub"
 external setsockopt_int : Unix.file_descr -> int -> int -> int -> unit = "setsockopt_int_stub"
-external ip_add_membership : Unix.file_descr -> string -> Ipaddr.V4.t -> unit = "ip_add_membership"
-external ip_drop_membership : Unix.file_descr -> string -> Ipaddr.V4.t -> unit = "ip_drop_membership"
-external ipv6_add_membership : Unix.file_descr -> string -> Ipaddr.V6.t -> unit = "ip_add_membership"
-external ipv6_drop_membership : Unix.file_descr -> string -> Ipaddr.V6.t -> unit = "ip_drop_membership"
+external ip_add_membership : Unix.file_descr -> string -> string -> unit = "ip_add_membership"
+external ip_drop_membership : Unix.file_descr -> string -> string -> unit = "ip_drop_membership"
+external ipv6_add_membership : Unix.file_descr -> string -> string -> unit = "ipv6_add_membership"
+external ipv6_drop_membership : Unix.file_descr -> string -> string -> unit = "ipv6_drop_membership"
 
-external bind6 : Unix.file_descr -> string -> Ipaddr.V6.t -> int -> int -> unit = "bind6_stub"
-external connect6 : Unix.file_descr -> string -> Ipaddr.V6.t -> int -> int -> unit = "connect6_stub"
+external bind6 : Unix.file_descr -> string -> string -> int -> int -> unit = "bind6_stub"
+external connect6 : Unix.file_descr -> string -> string -> int -> int -> unit = "connect6_stub"
 
 external send : Unix.file_descr -> Bytes.t -> int -> int -> int -> int = "send_stub"
 external recv : Unix.file_descr -> Bytes.t -> int -> int -> int -> int = "recv_stub"
@@ -74,9 +74,10 @@ module IP = struct
     let connect sock v4addr port =
       Unix.(connect sock @@ ADDR_INET (Ipaddr_unix.V4.to_inet_addr v4addr, port))
 
-    let membership ?(iface="") fd v4addr = function
-      | `Join -> ip_add_membership fd iface v4addr
-      | `Leave -> ip_drop_membership fd iface v4addr
+    let membership ?(iface="") fd v4addr =
+      let v4addr = Ipaddr.V4.to_bytes v4addr in function
+        | `Join -> ip_add_membership fd iface v4addr
+        | `Leave -> ip_drop_membership fd iface v4addr
 
     let mcast_outgoing_iface fd iface =
       setsockopt_int fd (int_of_level IPPROTO_IP)
@@ -93,15 +94,18 @@ module IP = struct
 
   module V6 = struct
     let bind ?(iface="") ?(flowinfo=0) sock v6addr port =
-      bind6 sock iface v6addr port flowinfo
+      let v6addr = Ipaddr.V6.to_bytes v6addr in
+      bind6 sock iface v6addr (swap16 port) flowinfo
 
     let connect ?(iface="") ?(flowinfo=0) sock v6addr port =
-      connect6 sock iface v6addr port flowinfo
+      let v6addr = Ipaddr.V6.to_bytes v6addr in
+      connect6 sock iface v6addr (swap16 port) flowinfo
 
-    let membership ?(iface="") fd v6addr = function
+    let membership ?(iface="") fd v6addr =
+      let v6addr = Ipaddr.V6.to_bytes v6addr in
+      function
       | `Join -> ipv6_add_membership fd iface v6addr
       | `Leave -> ipv6_drop_membership fd iface v6addr
-
 
     let mcast_outgoing_iface fd iface =
       setsockopt_int fd (int_of_level IPPROTO_IPV6)
