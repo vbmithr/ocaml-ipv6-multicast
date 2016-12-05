@@ -10,7 +10,7 @@ license: "ISC"
 
 build: [
   ["oasis" "setup"]
-  ["./configure" "--prefix %{prefix}%"]
+  ["./configure" "--prefix=%{prefix}%"]
   [make]
 ]
 
