@@ -34,7 +34,13 @@ module IPv6 : sig
   val ucast_hops : Unix.file_descr -> int -> unit
 end
 
-module CU = Unix
+module Lwt_unix : sig
+  val bind : ?iface:string -> ?flowinfo:int -> Lwt_unix.file_descr -> Unix.sockaddr -> unit
+  val connect : ?iface:string -> ?flowinfo:int -> Lwt_unix.file_descr -> Unix.sockaddr -> unit Lwt.t
+  val send : Lwt_unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int Lwt.t
+  val send_substring : Lwt_unix.file_descr -> string -> int -> int -> sendrecvflags list -> int Lwt.t
+  val recv : Lwt_unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int Lwt.t
+end
 
 module Unix : sig
   val bind : ?iface:string -> ?flowinfo:int -> Unix.file_descr -> Unix.sockaddr -> unit
@@ -46,10 +52,3 @@ module Unix : sig
   val recv : Unix.file_descr -> bytes -> int -> int -> sendrecvflags list -> int
 end
 
-module Lwt_unix : sig
-  val bind : ?iface:string -> ?flowinfo:int -> Lwt_unix.file_descr -> CU.sockaddr -> unit
-  val connect : ?iface:string -> ?flowinfo:int -> Lwt_unix.file_descr -> CU.sockaddr -> unit Lwt.t
-  val send : Lwt_unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int Lwt.t
-  val send_substring : Lwt_unix.file_descr -> string -> int -> int -> sendrecvflags list -> int Lwt.t
-  val recv : Lwt_unix.file_descr -> Bytes.t -> int -> int -> sendrecvflags list -> int Lwt.t
-end
