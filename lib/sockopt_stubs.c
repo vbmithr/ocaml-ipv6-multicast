@@ -8,6 +8,8 @@
 #include <caml/alloc.h>
 #include <caml/memory.h>
 #include <caml/fail.h>
+#include <caml/signals.h>
+#include <caml/unixsupport.h>
 
 int if_nametoindex_stub(value ifname)
 {
@@ -18,8 +20,10 @@ CAMLprim value send_stub(value sockfd, value buf, value pos, value len, value fl
 {
   CAMLparam5(sockfd, buf, pos, len, flags);
   int ret;
+  enter_blocking_section();
   ret = send(Int_val(sockfd), String_val(buf)+Int_val(pos), Int_val(len), Int_val(flags));
-  if (ret == -1) caml_failwith(strerror(errno));
+  leave_blocking_section();
+  if (ret == -1) uerror("send", Nothing);
   CAMLreturn(Val_int(ret));
 }
 
@@ -31,9 +35,11 @@ CAMLprim value sendto4_stub(value sockfd, value buf, value flags, value addr, va
   sa.sin_family = AF_INET;
   sa.sin_port = Int_val(port);
   memcpy(&sa.sin_addr, String_val(addr), sizeof(struct in_addr));
+  enter_blocking_section();
   ret = sendto(Int_val(sockfd), String_val(buf), caml_string_length(buf), Int_val(flags),
 	       (const struct sockaddr *)&sa, sizeof(struct sockaddr_in));
-  if (ret == -1) caml_failwith(strerror(errno));
+  leave_blocking_section();
+  if (ret == -1) uerror("sendto", Nothing);
   CAMLreturn(Val_int(ret));
 }
 
@@ -49,9 +55,11 @@ CAMLprim value sendto6_stub(value sockfd, value buf, value flags, value addr, va
   sa.sin6_flowinfo = Int_val(flowinfo);
   memcpy(&sa.sin6_addr, String_val(addr), 16);
   sa.sin6_scope_id = Int_val(scope_id);
+  enter_blocking_section();
   ret = sendto(Int_val(sockfd), String_val(buf), caml_string_length(buf), Int_val(flags),
 	       (const struct sockaddr *)&sa, sizeof(struct sockaddr_in6));
-  if (ret == -1) caml_failwith(strerror(errno));
+  leave_blocking_section();
+  if (ret == -1) uerror("sendto", Nothing);
   CAMLreturn(Val_int(ret));
 }
 
@@ -59,8 +67,10 @@ CAMLprim value recv_stub(value sockfd, value buf, value pos, value len, value fl
 {
   CAMLparam5(sockfd, buf, pos, len, flags);
   int ret;
+  enter_blocking_section();
   ret = recv(Int_val(sockfd), String_val(buf)+Int_val(pos), Int_val(len), Int_val(flags));
-  if (ret == -1) caml_failwith(strerror(errno));
+  leave_blocking_section();
+  if (ret == -1) uerror("recv", Nothing);
   CAMLreturn(Val_int(ret));
 }
 
@@ -71,9 +81,11 @@ CAMLprim value recvfrom_stub(value sockfd, value buf, value flags)
   int ret;
   struct sockaddr_in6 sa;
   socklen_t sa_len;
+  enter_blocking_section();
   ret = recvfrom(Int_val(sockfd), String_val(buf), caml_string_length(buf), Int_val(flags),
 		 (struct sockaddr *)&sa, &sa_len);
-  if (ret == -1) caml_failwith(strerror(errno));
+  leave_blocking_section();
+  if (ret == -1) uerror("recvfrom", Nothing);
   CAMLreturn(Val_int(ret));
 }
 
@@ -88,7 +100,7 @@ CAMLprim value bind6_stub(value sockfd, value ifname, value addr, value port, va
   memcpy(&sa.sin6_addr, String_val(addr), sizeof(struct in6_addr));
   sa.sin6_scope_id = if_nametoindex(String_val(ifname));
   ret = bind(Int_val(sockfd), (const struct sockaddr *)&sa, sizeof(struct sockaddr_in6));
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("bind", Nothing);
   CAMLreturn(Val_unit);
 }
 
@@ -102,8 +114,10 @@ CAMLprim value connect6_stub(value sockfd, value ifname, value addr, value port,
   sa.sin6_flowinfo = Int_val(flowinfo);
   memcpy(&sa.sin6_addr, String_val(addr), sizeof(struct in6_addr));
   sa.sin6_scope_id = if_nametoindex(String_val(ifname));
+  enter_blocking_section();
   ret = connect(Int_val(sockfd), (const struct sockaddr *)&sa, sizeof(struct sockaddr_in6));
-  if (ret == -1) caml_failwith(strerror(errno));
+  leave_blocking_section();
+  if (ret == -1) uerror("connect", Nothing);
   CAMLreturn(Val_unit);
 }
 
@@ -115,7 +129,7 @@ CAMLprim value getsockopt_int_stub(value sockfd, value level, value optname)
   int sizeof_int = sizeof(int);
   ret = getsockopt(Int_val(sockfd), Int_val(level), Int_val(optname),
 		   &c_value, (socklen_t *)&sizeof_int);
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("getsockopt_int", Nothing);
   CAMLreturn(Val_int(c_value));
 }
 
@@ -126,7 +140,7 @@ CAMLprim value setsockopt_int_stub(value sockfd, value level, value optname, val
   int c_optval = Int_val(optval);
   ret = setsockopt(Int_val(sockfd), Int_val(level), Int_val(optname),
 		   &c_optval, (socklen_t)sizeof(int));
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("setsockopt_int", Nothing);
   CAMLreturn(Val_unit);
 }
 
@@ -140,7 +154,7 @@ CAMLprim value ip_add_membership(value sockfd, value iface, value addr)
   mreq.imr_ifindex = if_nametoindex(String_val(iface));
   ret = setsockopt(Int_val(sockfd), IPPROTO_IP, IP_ADD_MEMBERSHIP,
 		   &mreq, sizeof(struct ip_mreqn));
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("setsockopt_int", Nothing);
   CAMLreturn(Val_unit);
 }
 
@@ -154,7 +168,7 @@ CAMLprim value ip_drop_membership(value sockfd, value iface, value addr)
   mreq.imr_ifindex = if_nametoindex(String_val(iface));
   ret = setsockopt(Int_val(sockfd), IPPROTO_IP, IP_DROP_MEMBERSHIP,
 		   &mreq, sizeof(struct ip_mreqn));
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("setsockopt_int", Nothing);
   CAMLreturn(Val_unit);
 }
 
@@ -167,7 +181,7 @@ CAMLprim value ipv6_add_membership(value sockfd, value iface, value addr)
   mreq.ipv6mr_interface = if_nametoindex(String_val(iface));
   ret = setsockopt(Int_val(sockfd), IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 		   &mreq, sizeof(struct ipv6_mreq));
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("setsockopt_int", Nothing);
   CAMLreturn(Val_unit);
 }
 
@@ -180,7 +194,7 @@ CAMLprim value ipv6_drop_membership(value sockfd, value iface, value addr)
   mreq.ipv6mr_interface = if_nametoindex(String_val(iface));
   ret = setsockopt(Int_val(sockfd), IPPROTO_IPV6, IPV6_DROP_MEMBERSHIP,
 		   &mreq, sizeof(struct ipv6_mreq));
-  if (ret == -1) caml_failwith(strerror(errno));
+  if (ret == -1) uerror("setsockopt_int", Nothing);
   CAMLreturn(Val_unit);
 }
 
