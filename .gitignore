@@ -1,12 +1,8 @@
 _build
-setup.*
+tmp
+*~
+\.\#*
+\#*#
+*.install
 *.native
 *.byte
-myocamlbuild.ml
-**/*.mldylib
-**/*.mllib
-**/*.clib
-**/META
-configure
-_tags
-Makefile

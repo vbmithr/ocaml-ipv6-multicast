@@ -1,0 +1,7 @@
+description = "UNIX bindings for IPv6 multicast"
+version = "%%VERSION%%"
+requires = "lwt ipaddr.unix"
+archive(byte) = "sockopt.cma"
+archive(native) = "sockopt.cmxa"
+plugin(byte) = "sockopt.cma"
+plugin(native) = "sockopt.cmxs"

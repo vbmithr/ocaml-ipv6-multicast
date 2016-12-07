@@ -1,3 +1,8 @@
-# OASIS_START
-# OASIS_STOP
-true: warn(-40)
+true : bin_annot, safe_string, warn(-40), package(bytes), package(ipaddr), package(lwt)
+
+<src> : include
+<test> : include
+
+<src/*.cm{,x}a>: link_stubs(src/libsockopt)
+
+<test/test_if_nametoindex.*>: package(lwt.unix), package(ipaddr.unix)

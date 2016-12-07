@@ -1,10 +1,5 @@
-S lib
+PKG bytes ipaddr lwt
+S src
 S test
-B _build/lib
-B _build/test
+B _build/**
 FLG -w -40
-PKG ctypes.foreign
-PKG ipaddr.unix
-PKG ocplib-endian
-PKG lwt
-PKG containers.string

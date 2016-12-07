@@ -1,26 +1,24 @@
-opam-version: "2.0"
+opam-version: "1.2"
 name: "sockopt"
 version: "1.0"
 maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
-authors: "Vincent Bernardoff <vb@luminar.eu.org>"
-homepage: "http://github.com/vbmithr/ocaml-sockopt"
-bug-reports: "http://github.com/vbmithr/ocaml-sockopt/issues"
-dev-repo: "git://github.com/vbmithr/ocaml-sockopt"
+authors: ["Vincent Bernardoff <vb@luminar.eu.org>"]
+homepage: "https://github.com/vbmithr/ocaml-sockopt"
+doc: "https://vbmithr.github.io/ocaml-sockopt/doc"
 license: "ISC"
-
-build: [
-  ["oasis" "setup"]
-  ["./configure" "--prefix=%{prefix}%"]
-  [make]
-]
-
-install: [make "install"]
-
-remove: ["ocamlfind" "remove" "sockopt"]
-
+dev-repo: "https://github.com/vbmithr/ocaml-sockopt.git"
+bug-reports: "https://github.com/vbmithr/ocaml-sockopt/issues"
+tags: []
+available: [ ocaml-version >= "4.01.0"]
 depends: [
   "ocamlfind" {build}
-  "oasis"
-  "ipaddr"
+  "ocamlbuild" {build}
+  "topkg" {build}
+  "ocb-stubblr" {build}
   "lwt"
+  "ipaddr"
 ]
+depopts: []
+build:
+[[ "ocaml" "pkg/pkg.ml" "build"
+           "--pinned" "%{pinned}%" ]]

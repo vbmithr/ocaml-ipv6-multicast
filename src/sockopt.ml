@@ -1,3 +1,9 @@
+(*---------------------------------------------------------------------------
+   Copyright (c) 2016 Vincent Bernardoff. All rights reserved.
+   Distributed under the ISC license, see terms at the end of the file.
+   %%NAME%% %%VERSION%%
+  ---------------------------------------------------------------------------*)
+
 type ip_option =
   | IP_MULTICAST_IF
   | IP_MULTICAST_TTL
@@ -50,8 +56,6 @@ external int_of_ip_option : ip_option -> int = "c_int_of_ip_option"
 external int_of_ipv6_option : ipv6_option -> int = "c_int_of_ipv6_option"
 external int_of_sa_family : sa_family -> int = "c_int_of_sa_family"
 external int_of_sendrecvflags : sendrecvflags -> int = "c_int_of_sendrecvflags"
-
-let int_of_flags flags = List.fold_left (fun acc f -> acc lor int_of_sendrecvflags f) 0 flags
 
 external if_nametoindex : string -> int = "if_nametoindex_stub"
 external setsockopt_int : Unix.file_descr -> int -> int -> int -> unit = "setsockopt_int_stub"
@@ -139,6 +143,10 @@ end
 module CU = Unix
 
 module Unix = struct
+
+  let int_of_flags flags =
+    List.fold_left (fun acc f -> acc lor int_of_sendrecvflags f) 0 flags
+
   let bind ?iface ?(flowinfo=0) fd sa = match sa with
     | Unix.ADDR_UNIX a -> Unix.bind fd sa
     | Unix.ADDR_INET (h, p) ->
@@ -158,7 +166,8 @@ module Unix = struct
     send fd buf pos len (int_of_flags flags)
 
   let send_substring fd buf pos len flags =
-    send fd (Bytes.unsafe_of_string buf) pos len flags
+    let buf = Bytes.unsafe_of_string buf in
+    send fd buf pos len flags
 
   let recv fd buf pos len flags =
     if (pos < 0 || len < 0 || pos + len > Bytes.length buf)
@@ -232,19 +241,39 @@ module Lwt_unix = struct
 
   let send ch buf pos len flags =
     if pos < 0 || len < 0 || pos > Bytes.length buf - len then
-      invalid_arg "Sockopt.L.send";
+      Lwt.fail_invalid_arg "send"
+    else
     let fd = Lwt_unix.unix_file_descr ch in
     Lwt_unix.(wrap_syscall Write ch (fun () -> Unix.send fd buf pos len flags))
 
   let send_substring ch buf pos len flags =
     if pos < 0 || len < 0 || pos > String.length buf - len then
-      invalid_arg "Sockopt.L.send_substring";
+      Lwt.fail_invalid_arg "send_substring"
+    else
     let fd = Lwt_unix.unix_file_descr ch in
-    Lwt_unix.(wrap_syscall Write ch (fun () -> Unix.send_substring fd buf pos len flags))
+    Lwt_unix.(wrap_syscall Write ch (fun () ->
+        Unix.send fd (Bytes.unsafe_of_string buf) pos len flags))
 
   let recv ch buf pos len flags =
     if pos < 0 || len < 0 || pos > Bytes.length buf - len then
-      invalid_arg "Sockopt.L.recv";
+      Lwt.fail_invalid_arg "recv"
+    else
     let fd = Lwt_unix.unix_file_descr ch in
-    Lwt_unix.(wrap_syscall Read ch (fun () -> Unix.send_substring fd buf pos len flags))
+    Lwt_unix.(wrap_syscall Read ch (fun () -> Unix.send fd buf pos len flags))
 end
+
+(*---------------------------------------------------------------------------
+   Copyright (c) 2016 Vincent Bernardoff
+
+   Permission to use, copy, modify, and/or distribute this software for any
+   purpose with or without fee is hereby granted, provided that the above
+   copyright notice and this permission notice appear in all copies.
+
+   THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+   WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+   MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+   ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+   WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+   ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+   OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+  ---------------------------------------------------------------------------*)
