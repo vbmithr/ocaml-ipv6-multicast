@@ -1,13 +1,13 @@
 opam-version: "1.2"
-name: "sockopt"
-version: "1.0"
+name: "ipv6-multicast"
+version: "0.1"
 maintainer: "Vincent Bernardoff <vb@luminar.eu.org>"
 authors: ["Vincent Bernardoff <vb@luminar.eu.org>"]
-homepage: "https://github.com/vbmithr/ocaml-sockopt"
-doc: "https://vbmithr.github.io/ocaml-sockopt/doc"
+homepage: "https://github.com/vbmithr/ocaml-ipv6-multicast"
+doc: "https://vbmithr.github.io/ocaml-ipv6-multicast/doc"
 license: "ISC"
-dev-repo: "https://github.com/vbmithr/ocaml-sockopt.git"
-bug-reports: "https://github.com/vbmithr/ocaml-sockopt/issues"
+dev-repo: "https://github.com/vbmithr/ocaml-ipv6-multicast.git"
+bug-reports: "https://github.com/vbmithr/ocaml-ipv6-multicast/issues"
 tags: []
 available: [ ocaml-version >= "4.01.0"]
 depends: [

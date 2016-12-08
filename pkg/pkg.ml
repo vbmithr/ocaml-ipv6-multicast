@@ -7,7 +7,7 @@ open Topkg
 let build = Pkg.build ~cmd:Ocb_stubblr_topkg.cmd ()
 
 let () =
-  Pkg.describe ~build "sockopt" @@ fun c ->
-  Ok [ Pkg.mllib "src/sockopt.mllib" ;
-       Pkg.clib "src/libsockopt.clib" ;
+  Pkg.describe ~build "ipv6-multicast" @@ fun c ->
+  Ok [ Pkg.mllib "src/ipv6_multicast.mllib" ;
+       Pkg.clib "src/libipv6_multicast.clib" ;
      ]

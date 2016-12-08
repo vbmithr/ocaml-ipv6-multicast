@@ -1,6 +1,6 @@
 all:
-	./build
+	./pkg/pkg.ml build
 
 .PHONY: clean
 clean:
-	./build clean
+	./pkg/pkg.ml clean
