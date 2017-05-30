@@ -1,4 +1,4 @@
-true : bin_annot, safe_string, warn(-40), package(bytes), package(ipaddr), package(lwt)
+true : bin_annot, safe_string, warn(-40), package(bytes), package(ipaddr), package(ipaddr.unix), package(lwt)
 
 <src> : include
 <test> : include
