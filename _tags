@@ -1,8 +1,0 @@
-true : bin_annot, safe_string, warn(-40), package(bytes), package(ipaddr), package(ipaddr.unix), package(lwt)
-
-<src> : include
-<test> : include
-
-<src/*.cm{,x}a>: link_stubs(src/libipv6_multicast)
-
-<test/test_if_nametoindex.*>: package(lwt.unix), package(ipaddr.unix)

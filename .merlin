@@ -1,5 +1,0 @@
-PKG bytes ipaddr lwt
-S src
-S test
-B _build/**
-FLG -w -40

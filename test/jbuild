@@ -1,0 +1,5 @@
+(executables
+ ((names (test_if_nametoindex))
+  (public_names (if-nametoindex))
+  (package ipv6-multicast)
+  (libraries (ipv6-multicast))))

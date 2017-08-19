@@ -1,6 +1,6 @@
 all:
-	./pkg/pkg.ml build
+	jbuilder build @install @runtest
 
 .PHONY: clean
 clean:
-	./pkg/pkg.ml clean
+	rm -rf _build

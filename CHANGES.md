@@ -1,4 +1,9 @@
-vX.Y.Z YYYY-MM-DD Location
+v.0.9 2017-08-19 Paris
 --------------------------
 
-First release. 
+Switch to jbuilder.
+
+v.0.1 2016-12-08 Paris
+--------------------------
+
+First release.
