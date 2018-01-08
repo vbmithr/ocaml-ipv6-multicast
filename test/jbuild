@@ -1,5 +1,11 @@
-(executables
- ((names (test_if_nametoindex))
-  (public_names (if-nametoindex))
-  (package ipv6-multicast)
-  (libraries (ipv6-multicast))))
+(jbuild_version 1)
+
+(executable
+ ((name test)
+  (modules (Test))
+  (libraries (rresult ipv6-multicast-lwt alcotest))))
+
+(alias
+ ((name    runtest)
+  (deps    (test.exe))
+  (action  (run ${<}))))
