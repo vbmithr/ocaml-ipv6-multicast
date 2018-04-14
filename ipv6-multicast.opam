@@ -12,6 +12,8 @@ tags: []
 available: [ ocaml-version >= "4.03.0"]
 depends: [
   "jbuilder" {build & >= "1.0+beta11"}
+  "rresult" {>= "0.5.0"}
+  "cstruct" {>= "3.2.1"}
   "ipaddr" {>= "2.8.0"}
 ]
 build: [ "jbuilder" "build" "-j" jobs "-p" name "@install" ]
