@@ -3,7 +3,6 @@
 (library
  ((name            ipv6_multicast)
   (public_name     ipv6-multicast)
-  (preprocess      (pps (ppx_cstruct)))
   (libraries       (rresult cstruct ipaddr.unix))
   (modules         (ipv6_multicast))
   (c_names         (ipv6_multicast_stubs))))
