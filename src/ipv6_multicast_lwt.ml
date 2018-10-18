@@ -6,7 +6,9 @@
 open Ipv6_multicast
 
 module Socket = struct
+
   type 'a domain = 'a Ipv6_multicast.Socket.domain
+
   type 'a typ = 'a Ipv6_multicast.Socket.typ
 
   type ('domain, 'typ) t = {
@@ -23,10 +25,10 @@ module Socket = struct
 end
 
 module Sockopt = struct
-  let set { Socket.sock } opt = Sockopt.set sock opt
+  let set { Socket.sock; _ } opt = Sockopt.set sock opt
 end
 
-let bind { Socket.sock ; lwt } sa =
+let bind { Socket.sock ; lwt ; _ } sa =
   Lwt_unix.check_descriptor lwt ;
   bind sock sa
 
@@ -83,12 +85,12 @@ let connect { Socket.sock ; fd ; lwt } sa =
         raise Retry
   end
 
-let send ?saddr ?flags { Socket.sock ; lwt } cs =
+let send ?saddr ?flags { Socket.sock ; lwt ; _ } cs =
   Lwt_unix.(wrap_syscall Write lwt begin fun () ->
       Ipv6_multicast.send ?saddr ?flags sock cs
     end)
 
-let send_bytes ?saddr ?flags { Socket.sock ; lwt } buf pos len =
+let send_bytes ?saddr ?flags { Socket.sock ; lwt ; _ } buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     Lwt.fail_invalid_arg "send_bytes"
   else
@@ -96,12 +98,12 @@ let send_bytes ?saddr ?flags { Socket.sock ; lwt } buf pos len =
       Ipv6_multicast.send_bytes ?saddr ?flags sock buf pos len
     end)
 
-let recv ?flags { Socket.sock ; lwt } cs =
+let recv ?flags { Socket.sock ; lwt ; _ } cs =
   Lwt_unix.(wrap_syscall Read lwt begin fun () ->
       Ipv6_multicast.recv ?flags sock cs
     end)
 
-let recv_bytes ?flags { Socket.sock ; lwt } buf pos len =
+let recv_bytes ?flags { Socket.sock ; lwt ; _ } buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     Lwt.fail_invalid_arg "recv_bytes"
   else
@@ -109,12 +111,12 @@ let recv_bytes ?flags { Socket.sock ; lwt } buf pos len =
       Ipv6_multicast.recv_bytes ?flags sock buf pos len
     end)
 
-let recvfrom ?flags { Socket.sock ; lwt } cs =
+let recvfrom ?flags { Socket.sock ; lwt ; _ } cs =
   Lwt_unix.(wrap_syscall Read lwt begin fun () ->
       Ipv6_multicast.recvfrom ?flags sock cs
     end)
 
-let recvfrom_bytes ?flags { Socket.sock ; lwt } buf pos len =
+let recvfrom_bytes ?flags { Socket.sock ; lwt ; _ } buf pos len =
   if pos < 0 || len < 0 || pos > Bytes.length buf - len then
     Lwt.fail_invalid_arg "recvfrom_bytes"
   else

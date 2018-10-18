@@ -1,6 +1,12 @@
-all:
-	jbuilder build @install @runtest
+default: install
 
-.PHONY: clean
+install:
+	dune build @install
+
+test:
+	dune runtest
+
 clean:
-	rm -rf _build
+	dune clean
+
+.PHONY: all clean install test

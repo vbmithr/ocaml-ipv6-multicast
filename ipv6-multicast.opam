@@ -11,9 +11,11 @@ bug-reports: "https://github.com/vbmithr/ocaml-ipv6-multicast/issues"
 tags: []
 available: [ ocaml-version >= "4.03.0"]
 depends: [
-  "jbuilder" {build & >= "1.0+beta11"}
+  "dune" {build & >= "1.0.1"}
   "rresult" {>= "0.5.0"}
   "cstruct" {>= "3.2.1"}
   "ipaddr" {>= "2.8.0"}
+  "alcotest" {test}
 ]
-build: [ "jbuilder" "build" "-j" jobs "-p" name "@install" ]
+build: [ "dune" "build" "-j" jobs "-p" name "@install" ]
+build-test: [ "dune" "runtest" "-j" jobs "-p" name ]

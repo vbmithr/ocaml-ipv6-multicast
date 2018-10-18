@@ -20,6 +20,7 @@ module Error_monad = struct
   let (>>>|?) a b =
     Lwt.return a >>|? b
 end
+
 open Error_monad
 
 let all_nodes = Ipaddr.V6.of_string_exn "ff02::1"
@@ -38,11 +39,14 @@ let receiver_opt msg =
 let receiver () =
   let msg = Cstruct.create 2 in
   receiver_opt msg >>= function
-  | Ok (nb_read, Sockaddr.V6 { addr; port; flowinfo; scope_id } ) ->
+  | Ok (nb_read, Sockaddr.V6 { scope_id ; _ } ) ->
       assert (scope_id = iface) ;
-      if nb_read <> 2  then Lwt.fail_with "error reading"
-      else if Cstruct.LE.get_uint16 msg 0 <> 42 then Lwt.fail_with "error reading"
-      else Lwt.return_unit
+      if nb_read <> 2 then
+        Lwt.fail_with "error reading"
+      else if Cstruct.LE.get_uint16 msg 0 <> 42 then
+        Lwt.fail_with "error reading"
+      else
+      Lwt.return_unit
   | Error msg -> Lwt.fail_with msg
 
 let sender () =

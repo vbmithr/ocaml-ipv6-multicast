@@ -6,41 +6,59 @@
 open Rresult
 
 external strerror : Bytes.t -> int = "ml_strerror_r" [@@noalloc]
+
 let strerror () =
   let buf = Bytes.create 1024 in
   let endp = strerror buf in
   Error (Bytes.sub_string buf 0 endp)
 
-let wrap  f = match f () with -1 -> strerror () | ret -> Ok ret
 let wrap1 f a = match f a with -1 -> strerror () | ret -> Ok ret
+
 let wrap2 f a b = match f a b with -1 -> strerror () | ret -> Ok ret
+
 let wrap3 f a b c = match f a b c with -1 -> strerror () | ret -> Ok ret
+
 let wrap4 f a b c d = match f a b c d with -1 -> strerror () | ret -> Ok ret
+
 let wrap5 f a b c d e = match f a b c d e with -1 -> strerror () | ret -> Ok ret
-let wrap6 f a b c d e g = match f a b c d e g with -1 -> strerror () | ret -> Ok ret
-let wrap7 f a b c d e g h = match f a b c d e g h with -1 -> strerror () | ret -> Ok ret
+
+let wrap6 f a b c d e g = match f a b c d e g with
+| -1 -> strerror ()
+| ret -> Ok ret
+
+let wrap7 f a b c d e g h = match f a b c d e g h with
+| -1 -> strerror ()
+| ret -> Ok ret
 
 module Iface = struct
+
   external scope_id_of_iface : string -> int = "ml_if_nametoindex" [@@noalloc]
+
   type t = int
+
   let of_string name = wrap1 scope_id_of_iface name
+
   let of_string_opt name = R.to_option (of_string name)
-  let of_string_exn name = match (of_string name) with
+
+  let of_string_exn name = match of_string name with
   | Ok ret -> ret
   | Error msg -> failwith msg
 
   let to_int (x : t) = (x : int)
-  let to_int32 = Int32.of_int
+
+  let to_int32 n = Int32.of_int n
 end
 
-external sizeof_sockaddr_storage : unit -> int = "sizeof_sockaddr_storage" [@@noalloc]
+external sizeof_sockaddr_storage : unit -> int =
+  "sizeof_sockaddr_storage" [@@noalloc]
+
 let sockaddr_storage_bytes = sizeof_sockaddr_storage ()
 
-external bind :
-  Unix.file_descr -> Cstruct.buffer -> int = "ml_bind" [@@noalloc]
-external connect :
-  Unix.file_descr -> Cstruct.buffer -> int = "ml_connect" [@@noalloc]
+external bind : Unix.file_descr -> Cstruct.buffer -> int =
+  "ml_bind" [@@noalloc]
 
+external connect : Unix.file_descr -> Cstruct.buffer -> int =
+  "ml_connect" [@@noalloc]
 
 module Socket = struct
   type _ domain =
@@ -80,18 +98,22 @@ module Socket = struct
 
   let create ?(proto=0) domain typ =
     let fd =
-      Unix.socket (socket_domain_of_domain domain) (socket_type_of_typ typ) proto in
+      Unix.socket (socket_domain_of_domain domain) (socket_type_of_typ typ) proto
+    in
     Socket (fd, domain, typ)
 
   let to_fd (Socket (fd, _, _)) = fd
 end
 
 module Sockaddr = struct
-  type _ family =
+
+  [@@@ocaml.warning "-37"]
+  type _ family  =
     | Af_inet : [`Inet] family
     | Af_inet6 : [`Inet6] family
     | Af_unix : [`Unix] family
     | Af_unspec : [`Unspec] family
+  [@@@ocaml.warning "+37"]
 
   external families : Cstruct.buffer -> int = "families" [@@noalloc]
 
@@ -118,14 +140,18 @@ module Sockaddr = struct
     if String.length path > 108 then
       invalid_arg "Sockaddr.of_unix: path too long" ;
     U path
+
   let of_ipv4_port addr port = V4 { addr ;  port }
+
   let of_ipv6_port ?(flowinfo=0l) ?(scope_id=0l) addr port =
     V6 { addr ; port ; flowinfo ; scope_id }
 
   let to_sockaddr : type a. a t -> Unix.sockaddr = function
   | U path -> Unix.ADDR_UNIX path
-  | V4 { addr ; port } -> Unix.ADDR_INET (Ipaddr_unix.V4.to_inet_addr addr, port)
-  | V6 { addr ; port } -> Unix.ADDR_INET (Ipaddr_unix.V6.to_inet_addr addr, port)
+  | V4 { addr ; port; _ } ->
+      Unix.ADDR_INET (Ipaddr_unix.V4.to_inet_addr addr, port)
+  | V6 { addr ; port; _ } ->
+      Unix.ADDR_INET (Ipaddr_unix.V6.to_inet_addr addr, port)
 
   let of_bytes_unix ?(pos=0) cs =
     let cs = Cstruct.shift cs pos in
@@ -190,7 +216,7 @@ module Sockaddr = struct
     write cs saddr ;
     cs
 
-  let to_group_req ?(iface=0) saddr =
+  let _to_group_req ?(iface=0) saddr =
     let cs = Cstruct.create (sockaddr_storage_bytes + 4) in
     Cstruct.LE.set_uint32 cs 0 (Int32.of_int iface) ;
     write ~pos:4 cs saddr ;
@@ -198,14 +224,24 @@ module Sockaddr = struct
 end
 
 module Sockopt = struct
+
   external setsockopt :
-    Unix.file_descr -> Int32.t -> Int32.t -> Cstruct.buffer -> int = "ml_setsockopt" [@@noalloc]
+    Unix.file_descr -> Int32.t -> Int32.t -> Cstruct.buffer -> int =
+    "ml_setsockopt" [@@noalloc]
+
   external sizeof_ip_mreqn : unit -> int = "sizeof_ip_mreqn" [@@noalloc]
+
   let ip_mreqn_bytes = sizeof_ip_mreqn ()
+
   external sizeof_ipv6_mreq : unit -> int = "sizeof_ipv6_mreq" [@@noalloc]
+
   let ipv6_mreq_bytes = sizeof_ipv6_mreq ()
-  external set_ip_mreqn : int -> string -> Cstruct.buffer -> unit = "set_ip_mreqn" [@@noalloc]
-  external set_ipv6_mreq : int -> string -> Cstruct.buffer -> unit = "set_ipv6_mreq" [@@noalloc]
+
+  external set_ip_mreqn : Cstruct.buffer -> Cstruct.buffer -> int -> unit =
+    "set_ip_mreqn" [@@noalloc]
+
+  external set_ipv6_mreq : Cstruct.buffer -> Cstruct.buffer -> unit =
+    "set_ipv6_mreq" [@@noalloc]
 
   type (_, _) t =
     | V4Multicast_if : (Socket.inet, Iface.t) t
@@ -222,6 +258,7 @@ module Sockopt = struct
     | V6only : (Socket.inet6, bool) t
 
   external sockopts : Cstruct.buffer -> int = "sockopts" [@@noalloc]
+
   let sockopts =
     let cs = Cstruct.create 1024 in
     let len = sockopts cs.buffer in
@@ -244,6 +281,7 @@ module Sockopt = struct
   let v6only             = V6only
 
   external levels : Cstruct.buffer -> int = "levels" [@@noalloc]
+
   let int32_of_level =
     let cs = Cstruct.create 1024 in
     let len = levels cs.buffer in
@@ -275,16 +313,6 @@ module Sockopt = struct
     let cs = Cstruct.create_unsafe 4 in
     Cstruct.LE.set_uint32 cs 0 (Int32.of_int v) ;
     set_cstruct fd opt cs
-
-  external sizeof_ip_mreqn : unit -> int = "sizeof_ip_mreqn" [@@noalloc]
-  let ip_mreqn_bytes = sizeof_ip_mreqn ()
-  external sizeof_ipv6_mreq : unit -> int = "sizeof_ipv6_mreq" [@@noalloc]
-  let ipv6_mreq_bytes = sizeof_ipv6_mreq ()
-
-  external set_ip_mreqn : Cstruct.buffer -> Cstruct.buffer -> int -> unit =
-    "set_ip_mreqn" [@@noalloc]
-  external set_ipv6_mreq : Cstruct.buffer -> Cstruct.buffer -> unit =
-    "set_ipv6_mreq" [@@noalloc]
 
   let ip_mreqn_of_sockaddr (saddr, iface) =
     let cs = Cstruct.create ip_mreqn_bytes in
@@ -343,6 +371,7 @@ type sendrecvflag =
   | Waitall
 
 external sendrecvflags : Cstruct.buffer -> int = "sendrecvflags" [@@noalloc]
+
 let int_of_sendrecvflag =
   let cs = Cstruct.create 1024 in
   let len = sendrecvflags cs.buffer in
@@ -352,22 +381,33 @@ let int_of_sendrecvflag =
 let int_of_flags flags =
   List.fold_left (fun acc f -> Int32.logor acc (int_of_sendrecvflag f)) 0l flags
 
-external send :
-  Unix.file_descr -> Cstruct.buffer -> Int32.t -> int = "ml_send" [@@noalloc]
+external send : Unix.file_descr -> Cstruct.buffer -> Int32.t -> int =
+  "ml_send" [@@noalloc]
+
 external sendto :
-  Unix.file_descr -> Cstruct.buffer -> Int32.t -> Cstruct.buffer -> int = "ml_sendto" [@@noalloc]
+  Unix.file_descr -> Cstruct.buffer -> Int32.t -> Cstruct.buffer -> int =
+  "ml_sendto" [@@noalloc]
+
 external send_bytes :
-  Unix.file_descr -> Bytes.t -> int -> int -> Int32.t -> int = "ml_send_bytes" [@@noalloc]
+  Unix.file_descr -> Bytes.t -> int -> int -> Int32.t -> int =
+  "ml_send_bytes" [@@noalloc]
+
 external sendto_bytes :
   Unix.file_descr -> Bytes.t -> int -> int -> Int32.t -> Cstruct.buffer -> int =
   "ml_sendto_bytes_bytecode" "ml_sendto_bytes" [@@noalloc]
-external recv :
-  Unix.file_descr -> Cstruct.buffer -> Int32.t -> int = "ml_recv" [@@noalloc]
+
+external recv : Unix.file_descr -> Cstruct.buffer -> Int32.t -> int =
+  "ml_recv" [@@noalloc]
+
 external recvfrom :
   Unix.file_descr -> Cstruct.buffer -> Int32.t ->
-  Cstruct.buffer -> Cstruct.buffer -> int = "ml_recvfrom" [@@noalloc]
+  Cstruct.buffer -> Cstruct.buffer -> int =
+  "ml_recvfrom" [@@noalloc]
+
 external recv_bytes :
-  Unix.file_descr -> Bytes.t -> int -> int -> Int32.t -> int = "ml_recv_bytes" [@@noalloc]
+  Unix.file_descr -> Bytes.t -> int -> int -> Int32.t -> int =
+  "ml_recv_bytes" [@@noalloc]
+
 external recvfrom_bytes :
   Unix.file_descr -> Bytes.t -> int -> int -> Int32.t ->
   Cstruct.buffer -> Cstruct.buffer -> int =
